@@ -76,6 +76,6 @@ A central part of the system is the **Parent Queue Pool**, which tracks all elig
 
 > This simple but powerful idea sets the stage for scalable and decentralized block creation — replacing linear limits with branching potential.
 
-➡️ *Further details are documented in `/parent-queue-pool.md` and `/consensus.md`.*
+➡️ *Further details are documented in `parent-queue-pool.md` and `consensus.md`.*
 
     
