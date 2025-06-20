@@ -132,7 +132,135 @@ B2   B3 ← Malicious Block
 ---
 ### 🌲 Example 2: Rolling Back a Deep Subtree
 
-- Initial Tree Structure:
+#### 🧱 Genesis
+```
+  B
+```
+
+- ✅ PQP: `[B]`
+
+
+#### 🧱 Level 1 – Children of B
+```
+    B
+   / \
+ L1   R1
+```
+
+
+- L1 and R1 are created from B.
+
+- ✅ PQP: `[L1, R1]`
+
+#### 🧱 Level 2 – Children of L1
+```
+      B
+     / \
+   L1   R1
+  /  \
+L11  L12
+```
+
+- L11 and L12 created from L1.
+
+- ✅ PQP: `[R1, L11, L12]`
+
+#### 🧱 Level 3 – Children of R1
+
+```
+          B
+         / \
+       L1   R1
+      / \   / \
+   L11 L12 R11 R12
+```
+
+- R11 and R12 created from R1.
+
+- ✅ PQP: `[L11, L12, R11, R12]`
+
+
+#### 🧱 Level 4 – Children of L11
+
+```
+          B
+         / \
+       L1   R1
+      / \   / \
+   L11 L12 R11 R12
+  /   \
+L111 L112
+```
+
+
+- L111 and L112 created from L11.
+
+- ✅ PQP: `[L12, R11, R12, L111, L112]`
+
+
+#### 🧱 Level 5 – Children of L12
+
+```
+              B
+         /         \
+       L1           R1
+      /     \      /   \
+   L11       L12   R11   R12
+  /   \     /   \
+L111 L112  L121  L122 
+```
+
+
+- L121 and L122 created from L12.
+
+- ✅ PQP: `[R11, R12, L111, L112, L121, L122]`
+
+### ❌ `L11` is Found to be Malicious – Rollback Begins
+
+- We now rollback all its descendants and repair the PQP.
+
+#### 🔁 Step 1: Pop `L122` → Add parent `L12`
+
+- ✅ PQP: `[L12, R11, R12, L111, L112, L121]`
+
+
+#### 🔁 Step 2: Pop `L121` → `L12` already in PQP → skip adding
+
+- ✅ PQP: `[L12, R11, R12, L111, L112]`
+
+
+#### 🔁 Step 3: Pop `L112` → Add parent `L11` (malicious)
+
+- `L11` is malicious → ❌ do **not** add to PQP
+
+- ✅ PQP: `[L12, R11, R12, L111]`
+
+
+#### 🔁 Step 4: Pop `L111` → `L11` already flagged malicious → skip
+
+- ✅ PQP: `[L12, R11, R12]`
+
+### ✅ Final Tree After Rollback
+
+```
+           B
+         /   \
+       L1     R1
+         \   /  \
+         L12 R11 R12
+        /  \
+     L121  L122   ← removed
+
+```
+
+
+- `L11`, `L111`, and `L112` are removed.
+- `L12` is now active and ready to continue growth.
+
+#### 📌 Final PQP After Rollback
+
+- ✅ PQP: `[L12, R11, R12]`
+
 
 ---
 
