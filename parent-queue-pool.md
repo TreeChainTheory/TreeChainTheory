@@ -318,9 +318,31 @@ TreeChain offers **localized damage recovery**, while linear chains require **gl
 - ✅ This is the **core strength** of TreeChain over **linear blockchain models**.
 ---
 
-### 👓 This design gives TreeChain:
-- ✅ Fault recovery support
-- ✅ Consensus flexibility
-- ✅ Structural adaptability
+### 🔒 Confirmed-Only PQP Consensus: No Rollbacks Needed
+
+- ✅ In this model, only **confirmed or finalized blocks** are allowed to submit `pqp_entry` into the Parent Queue Pool (PQP).
+- 🧱 This ensures that **only trusted and validated blocks** become future parents.
+- 🚫 Malicious or unconfirmed blocks are **never added to the PQP**, even temporarily.
+- 🔄 As a result, there's **no need for rollback or subtree pruning**, since no bad blocks reach the parent layer.
+- 🧠 This approach shifts the focus to **stronger pre-confirmation consensus** (e.g., BFT, finality gadgets).
+- 🛡️ Ideal for networks that prioritize **absolute safety** over immediate liveness or parallelism.
+
+> ⚖️ Tradeoff: While it avoids rollback risk, it may introduce **delays** in PQP updates due to waiting for confirmations.
+
+- 🌳 However, as the tree grows wide (more branches, more active parents), it creates a **large buffer** of parallel growth.
+- 🚀 Even if one branch is waiting for confirmation, others can continue producing blocks — keeping throughput high.
+- 🧠 The wider the TreeChain becomes, the **less noticeable** the confirmation delay becomes.
+- ✅ This makes **confirmed-only PQP models highly scalable and resilient**, especially in large validator networks.
+
+> TreeChain doesn’t rely on a single path — **parallelism makes confirmation delays nearly invisible at scale**.
+
+---
+### 🛡️ Is the Parent Queue Pool (PQP) Centralized?
+
+- ❌ No — although the PQP may look like a global scheduler, it is **completely decentralized**.
+- ✅ Each `pqp_entry` is embedded inside blocks and validated independently by every node.
+- 🔁 All updates to the PQP are **deterministic**, **signed**, and **locally reconstructable**.
+- 🌐 There is **no central authority**, no off-chain queue manager, and no extra protocol layer needed.
+- 🧠 Think of PQP like a **Merkle Tree root** — all nodes agree on it, but no one "hosts" it.
 
 
