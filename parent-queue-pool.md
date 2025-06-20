@@ -65,3 +65,72 @@ A more modular design is possible for future versions of TreeChain:
 > 💡 This approach trades simplicity for greater control and decoupling — and is ideal for advanced implementations of TreeChain.
 
 
+## 🔁 Why is the Parent Queue Pool (PQP) a Double-Ended Queue?
+
+Although TreeChain typically **adds entries at the end** and **removes from the front**, the Parent Queue Pool (PQP) is intentionally implemented as a **double-ended queue (deque)** to support rollback, error correction, and flexible consensus mechanisms.
+
+### 🧨 When Is the Back Used for Removal?
+
+- ✅ New `pqp_entry` blocks are added to the **back** (right side).
+- ✅ Parents are removed from the **front** (left side) once they produce two children.
+- ❗ If a **block is found malicious or invalid**, TreeChain must **rollback that branch**.
+- 🔄 The rollback process **removes children from the back**, and for every child removed:
+  - Its **parent is added to the front** of the PQP.
+- 🧠 This enables TreeChain to re-assign trustworthy parents for future block creation.
+
+### 🧩 PQP Entry Structure
+
+- 🆔 **queue_index**: Position in the PQP (sequential and unique).
+- 🔗 **block_hash**: Hash of the new block that becomes a parent.
+- 🌳 **parent_hash**: Hash of the block’s parent.
+- 👤 **leader_address**: Address or public key of the block-producing leader.
+- ✍️ **signature**: Signature by the leader, proving authorship.
+
+### 🧩 Rollback Rule Summary
+
+- 🔄 If any block is removed from the back:
+  - Its **parent** is **re-added to the front**.
+  - Ofcourse if the **parent** is already in the **pqp** then it wont get added.
+- 🔁 This process repeats until the invalid block is removed.
+- ✅ Ensures no valid branch is permanently lost due to one faulty child.
+
+### 🔒 If its a Confirmed-Only Consensus Variant
+
+> Only blocks that are confirmed or finalized are allowed to enter the PQP, so this problem won't arise.
+
+- 🚫 Prevents unconfirmed blocks from ever entering the tree.
+- 🧱 Guarantees only stable, trusted blocks can become parents.
+- ⚙️ Eliminates the need for rollback mechanisms entirely.
+
+### 📌 Why Double-Ended Matters
+
+- ⬅️ **Left side (front)**: Used to re-add safe parent blocks during rollbacks.
+- ➡️ **Right side (back)**: Used to append newly created child blocks.
+
+### 🌳 Example 1: Rolling Back a Single Malicious Block
+
+- Initial Tree Structure:
+```
+   B1
+  /  \
+B2   B3 ← Malicious Block
+
+```
+
+- PQP before rollback:
+  - PQP → [B2, B3]
+
+- Rollback steps:
+- ❌ Remove B3 from the back (invalid block)
+- 🔁 Add B1 (its parent) to the front
+
+- PQP after rollback:
+  - PQP → [B1, B2]
+  
+
+### 👓 This design gives TreeChain:
+- ✅ Fault recovery support
+- ✅ Consensus flexibility
+- ✅ Structural adaptability
+
+
