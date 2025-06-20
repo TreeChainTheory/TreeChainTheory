@@ -107,6 +107,8 @@ Although TreeChain typically **adds entries at the end** and **removes from the 
 - ⬅️ **Left side (front)**: Used to re-add safe parent blocks during rollbacks.
 - ➡️ **Right side (back)**: Used to append newly created child blocks.
 
+---
+
 ### 🌳 Example 1: Rolling Back a Single Malicious Block
 
 - Initial Tree Structure:
@@ -126,7 +128,13 @@ B2   B3 ← Malicious Block
 
 - PQP after rollback:
   - PQP → [B1, B2]
-  
+
+---
+### 🌲 Example 2: Rolling Back a Deep Subtree
+
+- Initial Tree Structure:
+
+---
 
 ### 👓 This design gives TreeChain:
 - ✅ Fault recovery support
