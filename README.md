@@ -16,10 +16,10 @@
 
 ### 📂 Core Documents
 
-- 📖 [`treechaintheory.md`](./treechaintheory.md)  
+- 📖 [`TreeChainTheory.md`](./TreeChainTheory.md)  
   Structure, block generation, rollback, and tree architecture.
 
-- 🧪 [`pqp.md`](./pqp.md)  
+- 🧪 [`parent-queue-pool.md`](./parent-queue-pool.md)  
   How the Parent Queue Pool works, entry format, embedded validation, rollback logic, and alternatives.
 
 - 📊 [`consensus/basic-model.md`](./consensus/basic-model.md) *(Coming Soon)*  
