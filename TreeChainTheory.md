@@ -84,8 +84,7 @@ The **TreeChain** framework reimagines blockchain architecture by replacing the 
 - This ensures every new block is cryptographically bound to both its *parent* and *aligned sibling chain*, maintaining strong consistency across concurrent branches.
 
 ### 🌿 Key Characteristics
-- **Parallel block growth** — multiple branches expand in real time.  
-- **Deterministic ordering** — alignment levels ensure predictable validator or miner roles.  
+- **Parallel block growth** — multiple branches expand in real time.   
 - **Efficient traversal** — constant-time lookups via index mapping.  
 - **Placeholder handling** — missing or stale blocks are represented by placeholders to preserve structural integrity.  
 - **Consensus flexibility** — TreeChain remains compatible with hybrid or dynamic consensus models.
@@ -121,14 +120,14 @@ Each new block generates a **ParentQueueEntry**, storing:
       B3   B4  B5   B6
     
 
-- **Tree** generalizes the idea of Treechain across **Proof-of-Stake (PoS)** and **Proof-of-History (PoH)** models — maintaining a consistent data structure while adapting the consensus logic.  
-- Instead of growing a single linear chain of confirmed blocks, it grows **multiple branches concurrently**, allowing **parallel leader validation** and **time-synchronized verification**.  
+- **Tree** generalizes the idea of Treechain across all the major **Proof-of-Work**, **Proof-of-Stake (PoS)** and **Proof-of-History (PoH)** models — maintaining a consistent data structure while adapting the consensus logic.  
+- Instead of growing a single linear chain of confirmed blocks, it grows **multiple branches concurrently**, allowing **parallel leader validation** and **time-synchronized verification** (for PoH).  
 - Structurally, it’s still **tree-based but index-driven**, not recursive — meaning it relies on an **index map** to track parent-child and aligned relationships efficiently.
 - The **index map** provides **O(1)** access by `queue_index` or `block_hash`, ensuring scalable & optimized lookups even as the network grows.
 - The **Parent Queue Pool (PQP)** ensures every block attaches to:
   - A valid **parent block** (`parent_hash`)
   - A valid **previous aligned block** (`prev_pqp_commitment`)
-  - A **stake/time-validated leader or Miner(POW model)**
+  - A **stake/time-validated leader or Miner (PoW model)**
 - When an expected block is missed (due to inactivity or disqualification), a **placeholder block** is inserted to preserve the deterministic structure — ensuring indexing consistency across all nodes.
 - This design allows **time-synchronized parallel validation** (PoH) or **stake-weighted participation** (PoS) — both with deterministic structural ordering.
 
@@ -167,10 +166,9 @@ pub struct TreeChain {
   - **Placeholder** or **orphaned** blocks are retained structurally but excluded from active count.
 
 ## ⚙️ Workflow
+---
 
 TreeChain coordinates **validator alignment**, **time progression**, and **parent scheduling** across all branches.
-
----
 
 ### 🧩 1. Aligned Block Creation
 
@@ -229,7 +227,7 @@ This guarantees all nodes maintain an **identical PQP index view**, even in roll
 
 ### 🌐 Outcome: Unified Parallel Consensus Layer
 
-Under **POW/PoS/PoH**, TreeChain evolves into a next-generation consensus model that is:
+Under **PoW/PoS/PoH**, TreeChain evolves into a next-generation consensus model that is:
 
 - ⚡ **Parallel** — Multiple validators or time slots produce blocks simultaneously, maximizing throughput.  
 - 🧭 **Deterministic** — Time or stake sequencing ensures predictable and fair leader rotation.  
@@ -247,7 +245,7 @@ Together, these properties make **TreeChain** a **unified, parallel, and verifia
 - **Determinism**: The process for choosing the next parent and assigning leaders is deterministic via a queue system (**Parent Queue Pool**).
 - **Flexibility**: Though we assume 2 or 3 children per parent here, the model supports N-ary trees.
 
-### 📦 The Parent Queue Pool
+# 📦 The Parent Queue Pool
 
 A central part of the system is the **Parent Queue Pool**, which tracks all eligible parent blocks. Here's how it works:
 
@@ -267,7 +265,7 @@ for the complete explanation of how the **Parent Queue Pool (PQP)** manages pare
 > **Please read this section after reviewing [`parent-queue-pool.md`](./parent-queue-pool.md)**  
 > This section explains how transactions are aligned across different validator or miner groups to maintain order and prevent duplication.
 
-- We Perform alignment Operation on every txn. so that its decided that which aligned miner/leader should pick that txn
+- We perform Alignment operation on every transaction. so that its decided that which aligned miner/leader should pick that transaction.
 
 ### 🎯 Purpose of the Alignment Operation
 
