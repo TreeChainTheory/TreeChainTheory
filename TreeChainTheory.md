@@ -316,3 +316,12 @@ By instead aligning using the **sender’s public key**, TreeChainTheory guarant
 
 > The alignment mechanism is what allows **TreeChainTheory** to maintain *parallelism without chaos* — enabling multiple aligned miners to operate simultaneously while guaranteeing that no transaction ever appears twice.
 
+# 🌴 ₿ Explore the Latest TreeChainTheory Bitcoin Model
+  - Implements the TreeChain architecture using **Proof-of-Work (PoW)** as the consensus mechanism.  
+  - Demonstrates how **tree-based parallel block mining** can be achieved using traditional mining logic.  
+  - Uses the **Parent Queue Pool (PQP)** to order parent blocks and ensure consistent parent-child scheduling.  
+  - Serves as the **base implementation** for exploring advanced models like PoS and PoH.  
+  - 🔗 **Explore the full repository here:**  
+    👉 **[TreeChainTheory — Bitcoin Model (GitHub)](https://github.com/TreeChainTheory/TreeChainTheory---BitcoinModel)**
+
+ > Make sure you read all the **TreeChainTheory** before exploring the **Bitcoint Model**
