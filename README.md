@@ -23,8 +23,8 @@
   How the Parent Queue Pool works, entry format, embedded validation, rollback logic, and alternatives.
 
 - 🌴 ₿ **TreeChainTheory — PoW Model** is now available!  
-  Explore how TreeChainTheory adapts Bitcoin’s Proof-of-Work consensus into a hierarchical block tree structure.  
-  Visit the repo to learn more: [🌳 TreeChainTheory---BitcoinModel](https://github.com/TreeChainTheory/TreeChainTheory---BitcoinModel)
+  - Explore how TreeChainTheory adapts Bitcoin’s Proof-of-Work consensus into a hierarchical block tree structure.  
+  - Visit the repo to learn more: [🌳 TreeChainTheory---BitcoinModel](https://github.com/TreeChainTheory/TreeChainTheory---BitcoinModel)
 
 
 ---
