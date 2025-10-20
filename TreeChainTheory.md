@@ -114,12 +114,12 @@ Each new block generates a **ParentQueueEntry**, storing:
 - To maintain simplicity and clarity, our theory assumes an **ideal case** where each parent block produces exactly **2 children**. This forms a balanced tree-like structure that is easy to model, visualize, and simulate.
 
 
-         Genesis
-          /   \
-       B1      B2
-      / \     /  \
-    B3   B4  B5   B6
-    ...
+           Genesis
+            /   \
+         B1      B2
+        / \     /  \
+      B3   B4  B5   B6
+    
 
 - **Tree** generalizes the idea of Treechain across **Proof-of-Stake (PoS)** and **Proof-of-History (PoH)** models — maintaining a consistent data structure while adapting the consensus logic.  
 - Instead of growing a single linear chain of confirmed blocks, it grows **multiple branches concurrently**, allowing **parallel leader validation** and **time-synchronized verification**.  
@@ -260,4 +260,61 @@ A central part of the system is the **Parent Queue Pool**, which tracks all elig
 📘 **Further details:** See [`parent-queue-pool.md`](./parent-queue-pool.md)  
 for the complete explanation of how the **Parent Queue Pool (PQP)** manages parent selection and rotation.
 
-    
+
+---
+
+## ⚙️ Transaction Alignment in TreeChainTheory
+> **Please read this section after reviewing [`parent-queue-pool.md`](./parent-queue-pool.md)**  
+> This section explains how transactions are aligned across different validator or miner groups to maintain order and prevent duplication.
+
+- We Perform alignment Operation on every txn. so that its decided that which aligned miner/leader should pick that txn
+
+### 🎯 Purpose of the Alignment Operation
+
+In TreeChainTheory, every transaction undergoes an **alignment operation** before inclusion in a block.  
+This ensures that the same transaction is **not included in multiple child blocks** — a critical step for preventing replay or duplication across parallel branches.
+
+The alignment mechanism divides transactions among aligned leaders (miners/validators) based on **deterministic rules**, ensuring that each transaction belongs to **exactly one alignment group**.
+
+### 🧩 Why Alignment Matters
+- 🚫 Prevents **transaction repetition** across parallel branches.  
+- ⚖️ Ensures **balanced distribution** of transactions among aligned miners or validators.  
+- 🔒 Maintains **deterministic transaction placement**, critical for consensus consistency.  
+- 🧱 Prevents exploitation where a single sender could trigger multiple simultaneous spends across branches.
+
+## 🌐 TreeChainTheory Transaction Alignment Logic
+
+### 💸 Normal Token Transfer
+- Uses the **sender’s public key (`pubkey`)**.  
+- Performs:
+  `alignment_index = (last_digit_of(sender's_pubkey) % N) + 1`
+> `N` represents "N" in N-ary Tree.
+- The resulting `alignment_index` determines which aligned miner/validator handles the transaction.  
+- This ensures that **all transactions from the same sender** always go to the **same alignment group** — preventing replay attempts.
+
+### ⚙️ Smart Contract Creation
+- Follows the **same logic** as normal transfers.  
+- Uses the **creator’s public key (`pubkey`)** to determine alignment:
+  `alignment_index = (last_digit_of(sender's_pubkey) % N) + 1`
+- Guarantees deterministic assignment for all contract creation events, ensuring that parallel miners cannot create duplicate deployments.
+
+### 📜 Smart Contract Interaction
+- Uses the **contract address** (not the sender’s key) for alignment: 
+  `alignment_index = (last_digit_of(contract_address) % N) + 1`
+- All interactions with the same contract are processed by the **same aligned validator group**.  
+- Multiple users interacting with the same contract will not split across branches — maintaining consistency in contract state transitions getting rid of **exploitation**.
+- Additionally, within each block, **no two transactions** can share the **same sender pubkey**, ensuring non-conflicting execution order.
+
+### 🧠 Why Not Use `txid` for Alignment?
+
+If alignment were determined by the **transaction ID (`txid`)**,  
+a malicious sender could generate **multiple valid transactions** using different inputs, producing separate `txid`s that map to **different alignment groups**.  
+Each aligned miner might then include one of those transactions, all appearing valid in isolation — leading to **parallel double-spends**.
+
+By instead aligning using the **sender’s public key**, TreeChainTheory guarantees that:
+- All of a sender’s transactions are handled by **a single aligned miner or validator**.
+- Cross-branch double-spend attempts are structurally impossible.
+- Consensus remains **fair, deterministic, and cryptographically secure**.
+
+> The alignment mechanism is what allows **TreeChainTheory** to maintain *parallelism without chaos* — enabling multiple aligned miners to operate simultaneously while guaranteeing that no transaction ever appears twice.
+
