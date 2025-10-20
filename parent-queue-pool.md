@@ -1,6 +1,6 @@
 # 🧾 Parent Queue Pool (PQP)
 
-The **Parent Queue Pool** is a decentralized **queue** (deque) that maintains a list of upcoming parent blocks. It is a core component of the TreeChainTheory protocol, enabling scalable and parallel block generation.
+The **Parent Queue Pool** is a decentralized **queue** that maintains a list of upcoming parent blocks. It is a core component of the TreeChainTheory protocol, enabling scalable and parallel block generation.
 
 ### 🔁 What does the PQP do?
 
@@ -9,26 +9,31 @@ The **Parent Queue Pool** is a decentralized **queue** (deque) that maintains a 
 - 🚮 Removes a parent block once it gets its designated number of children (N).
 
 ---
-### 📦 What does each PQP entry contain?
 
+# 🤔 PQP Explanation
+- **PQP** is a `queue` of **Parent Queue Entries**.
+- **Parent Queue Entry** is a extracted from a block from its **pqp_entry** & additional required feilds.
+
+### 📦 What does a PQP entry contain?
 Each block added to the TreeChain includes a compact **`pqp_entry`** —  
 a record of essential parent-related metadata embedded within the block itself. 
 <details>
   <summary>click to view pqp_entry in the block:</summary>
   
-    ```json  
-    "pqp_entry": {
-      "queue_index": N,
-      "leader_address": "<public key or address of the leader who created the block>",
-      "prev_pqp_commitment" : "<points to the pqp commitment of the same aligned previous block>",
-      "signature": "<signed by the leader to prove authenticity>"
-    }
-    ```
+  ```json  
+  "pqp_entry": {
+    "queue_index": N,
+    "leader_address": "<public key or address of the leader who created the block>",
+    "prev_pqp_commitment" : "<points to the pqp commitment of the same aligned previous block>",
+    "signature": "<signed by the leader to prove authenticity>"
+  }
+  ```
 </details>
-More feilds are extracted from the block and made such an entry (just like the below one) that helps link the block into the broader **Parent Queue Pool (PQP)** system.
+
+More feilds are extracted from the block and made such an entry (Parent Queue Entry) that helps link the block into the broader **Parent Queue Pool (PQP)** system.
 
 ```json
-"pqp_entry": {
+"Parent Queue Entry": {
   "queue_index": N,
   "align": "<alignment level of the block>",
   "block_hash": "<hash of the new block>",
@@ -41,15 +46,14 @@ More feilds are extracted from the block and made such an entry (just like the b
 ```
 - The pqp_entry remains within the block, making every block self-verifiable and self-contained.
 - It defines both structural position (through `queue_index` and `align`) and cryptographic linkage (through commitment fields).
----
+
 ### 🧩 Parent Queue Entry Structure 
 
 - A `queue` of these entries make the **PQP**.
-When a new block is created, a separate record — called the **`ParentQueueEntry`** —  
-is generated and added to the **Parent Queue Pool (PQP)**.  
-This entry **extracts and extends** fields from the block’s `pqp_entry`.
+- When a new block is created, a separate record — called the **`ParentQueueEntry`** — is generated and added to the **Parent Queue Pool (PQP)**.  
+- This entry **extracts and extends** fields from the block’s `pqp_entry`.
 
-- 🆔 **queue_index** → Position of the block in the PQP sequence.  
+- 🆔 **queue_index** → A unique positional number assigned to each block based on breadth-first order — starting from the genesis block (0) and moving left to right, level by level. It represents the intended position of a block in the tree (even if some blocks are missing) and ensures deterministic, ordered scheduling within the Parent Queue Pool (PQP).  
 - 🧭 **align** → Alignment level of the block (1-aligned, 2-aligned, …).  
 - 🧱 **block_hash** → Hash of the block (acts as unique ID).  
 - 🌳 **parent_hash** → Hash of the block’s parent.  
@@ -61,6 +65,9 @@ This entry **extracts and extends** fields from the block’s `pqp_entry`.
 > If the entry is removed after getting enough children from the PQP , then status feild is not needed
 
 The **ParentQueueEntry** is extracted from the `block` & is not the same as `pqp_entry` and exits only in the PQP memory/state — and is dynamically updated as the tree expands.
+
+- The **PQP** is a collection of these **Parent Queue Entries**, which stores them in the queue_index order.
+- **PQP** only stores the **Parent Queue Entry's** of those Blocks, which did not become **parent** yet.
 
 
 ---
@@ -113,8 +120,10 @@ In **TreeChain**, the PQP is updated in a decentralized and verifiable way by em
   - **Efficient parent updates** as the tree grows.  
   - **Continuous hashing** across all alignment levels — maintaining both **tree structure** and **sequential security**.
 ---
+
 # 🌴 TreeChain & ⛓ PQP ( Visualization )
-- Let this **Visualizaton** follow **POW** model.
+
+- Let this **Visualizaton** follow **PoW** model.
 
 ### Genisis Child Propagation (CHILDREN = 3)
 <img width="450" height="300" alt="image" src="https://github.com/user-attachments/assets/d6b3b6e9-7018-4821-9f66-ccc8f4759316" />
@@ -143,7 +152,13 @@ In **TreeChain**, the PQP is updated in a decentralized and verifiable way by em
 
 
 - The **PQP Commitment** connection ensures the chain continuity among different **aligned blocks** as shown in the diagram
-- Its clear that the Previous PQP commitment is connected to the same aligned previous block in the **TREE**
+- Its clear that the Previous PQP commitment of **12** is connected to the same aligned previous block in the **Tree**
+
+> 🔗 Explore the **PoW Model (Bitcoin Model)** of **TreeChainTheory** on:
+> - Make sure you read all the **TreeChainTheory** before exploring the **Bitcoint Model**
+> - [https://github.com/TreeChainTheory/TreeChainTheory---BitcoinModel](https://github.com/TreeChainTheory/TreeChainTheory---BitcoinModel)
+
+
 
 ---
 
@@ -218,8 +233,8 @@ This ensures that only validated and trusted parents participate in the next rou
 
 - ❌ No — although the PQP may look like a global scheduler, it is **completely decentralized**.
 - ✅ Each `pqp_entry` is embedded inside blocks and validated independently by every node.
-- 🔁 All updates to the PQP are **deterministic**, **signed**, and **locally reconstructable**.
+- 🔁 All updates to the PQP are **deterministic**, **signed**, and **Node reconstructable**.
 - 🌐 There is **no central authority**, no off-chain queue manager, and no extra protocol layer needed.
-- 🧠 Think of PQP like a **Merkle Tree root** — all nodes agree on it, but no one "hosts" it.
+- 🧠 Think of PQP like a **Merkle Tree root** — all nodes agree on it, but no one "hosts" it. Block itself hosts their respective PQP entry.
 
 
