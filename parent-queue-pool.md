@@ -1,36 +1,66 @@
 ## 🧾 Parent Queue Pool (PQP)
 
-The **Parent Queue Pool** is a decentralized **double-ended queue** (deque) that maintains a list of upcoming parent blocks. It is a core component of the TreeChainTheory protocol, enabling scalable and parallel block generation.
+The **Parent Queue Pool** is a decentralized **queue** (deque) that maintains a list of upcoming parent blocks. It is a core component of the TreeChainTheory protocol, enabling scalable and parallel block generation.
 
 ### 🔁 What does the PQP do?
 
 - 🧠 Tracks all blocks that are eligible to become parents.
 - 🔄 Manages parent assignment for future child blocks.
-- 🚮 Removes a parent block once it gets its designated number of children (2 in the ideal case).
+- 🚮 Removes a parent block once it gets its designated number of children (N).
 
 ### 📦 What does each PQP entry contain?
 
-Each block that is added to the treechain creates a new entry in the PQP. These entries contain metadata necessary for verification and scheduling:
+Each block added to the TreeChain includes a compact **`pqp_entry`** —  
+a record of essential parent-related metadata embedded within the block itself. 
+<details>
+  <summary>click to view pqp_entry in the block:</summary>
+  
+    ```json  
+    "pqp_entry": {
+      "queue_index": N,
+      "leader_address": "<public key or address of the leader who created the block>",
+      "prev_pqp_commitment" : "<points to the pqp commitment of the same aligned previous block>",
+      "signature": "<signed by the leader to prove authenticity>"
+    }
+    ```
+</details>
+More feilds are extracted from the block and made such an entry (just like the below one) that helps link the block into the broader **Parent Queue Pool (PQP)** system.
 
 ```json
 "pqp_entry": {
   "queue_index": N,
+  "align": "<alignment level of the block>",
   "block_hash": "<hash of the new block>",
   "parent_hash": "<hash of the parent block>",
-  "leader_address": "<public key or address of the leader who created the block>",
+  "pqp_commitment": "<commitment hash of internal fields (includes block_hash)>",
+  "prev_pqp_commitment": "<link to previous aligned block>",
+  "leader_address": "<public key/address of the block-producing leader>",
   "signature": "<signed by the leader to prove authenticity>"
 }
 ```
+- The pqp_entry remains within the block, making every block self-verifiable and self-contained.
+- It defines both structural position (through `queue_index` and `align`) and cryptographic linkage (through commitment fields).
 ---
-## 🧩 PQP Entry Structure
+### 🧩 Parent Queue Entry Structure 
 
-Each entry in the **Parent Queue Pool (PQP)** contains essential metadata about blocks that will act as parents in the TreeChain.
+- A `queue` of these entries make the **PQP**.
+When a new block is created, a separate record — called the **`ParentQueueEntry`** —  
+is generated and added to the **Parent Queue Pool (PQP)**.  
+This entry **extracts and extends** fields from the block’s `pqp_entry`.
 
-- 🆔 **queue_index**: Position in the PQP (sequential, deterministic).
-- 🔗 **block_hash**: Unique hash of the newly created block.
-- 🌳 **parent_hash**: Hash of the parent block from which this block was derived.
-- 👤 **leader_address**: Identity/public key of the block-producing leader.
-- ✍️ **signature**: Digital signature by the leader proving authorship and integrity.
+- 🆔 **queue_index** → Position of the block in the PQP sequence.  
+- 🧭 **align** → Alignment level of the block (1-aligned, 2-aligned, …).  
+- 🧱 **block_hash** → Hash of the block (acts as unique ID).  
+- 🌳 **parent_hash** → Hash of the block’s parent.  
+- 🔐 **pqp_commitment** → Commitment hash of internal block metadata.  
+- 🔗 **prev_pqp_commitment** → Points to the previous block in the same alignment path.  
+- 👤 **leader_address** → Public key or address of the block creator.  
+- ✍️ **signature** → Signature proving authenticity of the leader.  
+- ⚙️ **status** → Current PQP state (e.g., `eligible`, `completed`, `removed`).  
+> If the entry is removed after getting enough children from the PQP , then status feild is not needed
+
+The **ParentQueueEntry** is extracted from the `block` & is not the same as `pqp_entry` and exits only in the PQP memory/state — and is dynamically updated as the tree expands.
+
 
 ---
 
@@ -39,8 +69,8 @@ Each entry in the **Parent Queue Pool (PQP)** contains essential metadata about 
 In **TreeChain**, the PQP is updated in a decentralized and verifiable way by embedding the entry **directly inside the block**.
 
 - 📦 The `pqp_entry` is included in the block body at the time of block creation.
-- 🌐 All nodes extract the `pqp_entry` upon receiving the block.
-- 📋 Each node appends the entry to their **local PQP** based on queue rules.
+- 🌐 All nodes extract the `pqp_entry` with `additional required feilds` upon receiving the block.
+- 📋 Each node appends the entry to their **PQP** based on queue rules.
 - ✅ The block itself serves as **cryptographic proof** of the PQP entry.
 
 ---
@@ -50,6 +80,38 @@ In **TreeChain**, the PQP is updated in a decentralized and verifiable way by em
 - 🔒 **Integrity**: If the block is valid, its PQP entry is inherently valid.
 - 🧩 **Simplicity**: No extra gossip or sync mechanism is needed for the queue.
 - ⚙️ **Consistency**: All nodes see the same PQP if they agree on the TreeChain.
+
+---
+# ⛓ PQP Workflow
+
+- **`PQP`** holds all `ParentQueueEntry` instances inside its **`pool`**, which behaves as a **double-ended queue**.
+
+- When a **new block** is created:
+  - Its **PQP entry** (with additional metadata) is **added to the end** of the PQP pool.  
+  - Initially, the PQP starts with only the **genesis entry**.  
+  - The **first entry** in the PQP pool represents the **current parent**.  
+  - The **second entry** represents the **next parent**.
+
+- **Parent update conditions:**
+  - When the **current parent** receives the maximum number of **`CHILDREN`** blocks (all pointing to its `block_hash`),then it is **discarded**.  
+  - If the **next parent** receives **any child block** (whose `parent_hash` equals the next parent’s `block_hash`):  
+    - The **current parent** is **discarded**, and  
+    - The **next parent** becomes the new **current parent**.
+
+- **While creating a new block:**
+  - Miner/Leader uses the **current parent’s `block_hash`** as its **`parent_hash`**.  
+  - To determine **`prev_pqp_commitment`**:
+    - It **iterates from the back** of the PQP pool, searching for an entry with the **same alignment**.  
+    - If not found, it queries the **TreeChain (IndexMap)** starting from the **first entry’s `queue_index` → 0**,  
+      until it finds a block of the same alignment.  
+    - If found, it takes that block’s **`pqp_commitment`** as the **`prev_pqp_commitment`**.  
+    - If no such aligned block exists, it defaults to the **genesis commitment**.
+
+- **This mechanism ensures:**
+  - **Order-preserving linkage** between aligned blocks.  
+  - **Efficient parent updates** as the tree grows.  
+  - **Continuous hashing** across all alignment levels — maintaining both **tree structure** and **sequential security**.
+ 
 
 ---
 
@@ -64,251 +126,45 @@ A more modular design is possible for future versions of TreeChain:
 
 > 💡 This approach trades simplicity for greater control and decoupling — and is ideal for advanced implementations of TreeChain.
 
+---
 
-## 🔁 Why is the Parent Queue Pool (PQP) a Double-Ended Queue?
+## 🔁 Why is the Parent Queue Pool (PQP) a Queue?
 
-Although TreeChain typically **adds entries at the end** and **removes from the front**, the Parent Queue Pool (PQP) is intentionally implemented as a **double-ended queue (deque)** to support rollback, error correction, and flexible consensus mechanisms.
+The **Parent Queue Pool (PQP)** is fundamentally designed as a **queue**,  
+where new parent entries are appended in sequence as the tree expands.
+and once a parent receives the
 
-### 🧨 When Is the Back Used for Removal?
+However, it’s **not strictly required** to remain a simple queue —  
+it can be extended into a **double-ended queue (deque)** to enable additional functionality,  
+such as rollback and error recovery in case of **malicious or unconfirmed blocks**.
 
-- ✅ New `pqp_entry` blocks are added to the **back** (right side).
-- ✅ Parents are removed from the **front** (left side) once they produce two children.
-- ❗ If a **block is found malicious or invalid**, TreeChain must **rollback that branch**.
-- 🔄 The rollback process **removes children from the back**, and for every child removed:
-  - Its **parent is added to the front** of the PQP.
-- 🧠 This enables TreeChain to re-assign trustworthy parents for future block creation.
+In some implementations, a **“confirm-only PQP mode”** may be used —  
+where a block’s `pqp_entry` is **not added** to the PQP until the block is **confirmed**.  
+This ensures that only validated and trusted parents participate in the next round of block creation.
 
-### 🧩 PQP Entry Structure
 
-- 🆔 **queue_index**: Position in the PQP (sequential and unique).
-- 🔗 **block_hash**: Hash of the new block that becomes a parent.
-- 🌳 **parent_hash**: Hash of the block’s parent.
-- 👤 **leader_address**: Address or public key of the block-producing leader.
-- ✍️ **signature**: Signature by the leader, proving authorship.
-
-### 🧩 Rollback Rule Summary
-
-- 🔄 If any block is removed from the back:
-  - Its **parent** is **re-added to the front**.
-  - Ofcourse if the **parent** is already in the **pqp** then it wont get added.
-- 🔁 This process repeats until the invalid block is removed.
-- ✅ Ensures no valid branch is permanently lost due to one faulty child.
-
-### 🔒 If its a Confirmed-Only Consensus Variant
+### 🔒 In a Confirmed-Only Consensus Variant
 
 > Only blocks that are confirmed or finalized are allowed to enter the PQP, so this problem won't arise.
 
-- 🚫 Prevents unconfirmed blocks from ever entering the tree.
+- 🚫 Prevents unconfirmed blocks from ever entering the **PQPool**.
 - 🧱 Guarantees only stable, trusted blocks can become parents.
 - ⚙️ Eliminates the need for rollback mechanisms entirely.
 
-### 📌 Why Double-Ended Matters
-
-- ⬅️ **Left side (front)**: Used to re-add safe parent blocks during rollbacks.
-- ➡️ **Right side (back)**: Used to append newly created child blocks.
 
 ---
 
-### 🌳 Example 1: Rolling Back a Single Malicious Block
-
-- Initial Tree Structure:
-```
-   B1
-  /  \
-B2   B3 ← Malicious Block
-
-```
-
-- PQP before rollback:
-  - PQP → [B2, B3]
-
-- Rollback steps:
-- ❌ Remove B3 from the back (invalid block)
-- 🔁 Add B1 (its parent) to the front
-
-- PQP after rollback:
-  - PQP → [B1, B2]
-
----
-### 🌲 Example 2: Rolling Back a Deep Subtree
-
-#### 🧱 Genesis
-```
-  B
-```
-
-- ✅ PQP: `[B]`
-
-
-#### 🧱 Level 1 – Children of B
-```
-    B
-   / \
- L1   R1
-```
-
-
-- L1 and R1 are created from B.
-
-- ✅ PQP: `[L1, R1]`
-
-#### 🧱 Level 2 – Children of L1
-```
-      B
-     / \
-   L1   R1
-  /  \
-L11  L12
-```
-
-- L11 and L12 created from L1.
-
-- ✅ PQP: `[R1, L11, L12]`
-
-#### 🧱 Level 3 – Children of R1
-
-```
-          B
-         / \
-       L1   R1
-      / \   / \
-   L11 L12 R11 R12
-```
-
-- R11 and R12 created from R1.
-
-- ✅ PQP: `[L11, L12, R11, R12]`
-
-
-#### 🧱 Level 4 – Children of L11
-
-```
-          B
-         / \
-       L1   R1
-      / \   / \
-   L11 L12 R11 R12
-  /   \
-L111 L112
-```
-
-
-- L111 and L112 created from L11.
-
-- ✅ PQP: `[L12, R11, R12, L111, L112]`
-
-
-#### 🧱 Level 5 – Children of L12
-
-```
-              B
-           /     \
-         /         \
-        L1          R1
-      /    \       /   \
-   L11       L12  R11   R12
-  /   \     /   \
-L111 L112  L121  L122 
-```
-
-
-- L121 and L122 created from L12.
-
-- ✅ PQP: `[R11, R12, L111, L112, L121, L122]`
-
-### ❌ `L11` is Found to be Malicious – Rollback Begins
-
-- We now rollback all its descendants and repair the PQP.
-
-#### 🔁 Step 1: Pop `L122` → Add parent `L12`
-
-- ✅ PQP: `[L12, R11, R12, L111, L112, L121]`
-
-
-#### 🔁 Step 2: Pop `L121` → `L12` already in PQP → skip adding
-
-- ✅ PQP: `[L12, R11, R12, L111, L112]`
-
-
-#### 🔁 Step 3: Pop `L112` → Add parent `L11` (malicious)
-
-- `L11` is malicious → ❌ do **not** add to PQP
-
-- ✅ PQP: `[L12, R11, R12, L111]`
-
-
-#### 🔁 Step 4: Pop `L111` → `L11` already flagged malicious → skip
-
-- ✅ PQP: `[L12, R11, R12]`
-
-### ✅ Final Tree After Rollback
-
-```
-           B
-         /   \
-       L1     R1
-         \   /  \
-         L12 R11 R12
-          
-     L121  L122   ← removed
-
-```
-
-
-- `L11`, `L111`, and `L112` are removed.
-- `L12` is now active and ready to continue growth.
-
-#### 📌 Final PQP After Rollback
-
-- ✅ PQP: `[L12, R11, R12]`
-
-
----
 
 
 ## ✅ TreeChain’s Structure Tolerates Partial Growth
 
-- 🌳 **TreeChain is not strictly binary** — the 2-child model is just the ideal case.
+- 🌳 **TreeChain is not strictly binary or trinary** — the 2 or 3-child model is just the ideal case.
 - 🧩 **Parents are not required to have both children** at the same time.
 - ❌ If a **child is invalidated**, the remaining child still stays valid and active.
 - ✂️ Similar to **Merkle tree pruning** — we trim only the bad branch, not the whole structure.
 - 🔁 The tree continues to grow from the valid parts without requiring full resets.
-- 🛡️ So, L1 having only `L12` after `L11` is removed is **not a violation**, but a **resilient fallback**.
-
-### 🔄 TreeChain vs Linear Blockchain in Fault Recovery
-
-Let's compare how a malicious block affects both systems.
-
-#### 🧱 TreeChain Example:
-
-- Total blocks produced: 11
-- Malicious block: L11 (4th level)
-- Blocks removed: L11, L111, L112, L121, L122 → Total = 5
-- Surviving blocks: 6 (L12, R1, R11, R12, B, L1)
-
-✅ Recovery: Tree continues from L12 without restarting.
 
 
-#### 🔗 Traditional Linear Blockchain:
-
-- Total blocks produced: 11
-- Malicious block: Block 4
-- All blocks after Block 4 are invalid.
-- Blocks removed: Blocks 4 to 11 → Total = 8
-- Chain rolls back to Block 3 and **restarts**
-
-❌ Recovery: Everything after the bad block is lost.
-
-
-### ✅ Summary
-
-| Model           | Malicious Block | Blocks Lost | Resumes From | Parallel Damage Limit |
-|----------------|------------------|-------------|--------------|------------------------|
-| TreeChain      | L11              | 5           | L12          | Only from bad subtree  |
-| Linear Chain   | Block 4          | 8           | Block 3      | Entire rest of chain   |
-
-TreeChain offers **localized damage recovery**, while linear chains require **global rollback**.
----
 ### ✨ Key Insight: Resilience of TreeChain
 
 - ⚠️ Even when a block in **TreeChain** is found **malicious**...
@@ -318,25 +174,6 @@ TreeChain offers **localized damage recovery**, while linear chains require **gl
 - ✅ This is the **core strength** of TreeChain over **linear blockchain models**.
 ---
 
-### 🔒 Confirmed-Only PQP Consensus: No Rollbacks Needed
-
-- ✅ In this model, only **confirmed or finalized blocks** are allowed to submit `pqp_entry` into the Parent Queue Pool (PQP).
-- 🧱 This ensures that **only trusted and validated blocks** become future parents.
-- 🚫 Malicious or unconfirmed blocks are **never added to the PQP**, even temporarily.
-- 🔄 As a result, there's **no need for rollback or subtree pruning**, since no bad blocks reach the parent layer.
-- 🧠 This approach shifts the focus to **stronger pre-confirmation consensus** (e.g., BFT, finality gadgets).
-- 🛡️ Ideal for networks that prioritize **absolute safety** over immediate liveness or parallelism.
-
-> ⚖️ Tradeoff: While it avoids rollback risk, it may introduce **delays** in PQP updates due to waiting for confirmations.
-
-- 🌳 However, as the tree grows wide (more branches, more active parents), it creates a **large buffer** of parallel growth.
-- 🚀 Even if one branch is waiting for confirmation, others can continue producing blocks — keeping throughput high.
-- 🧠 The wider the TreeChain becomes, the **less noticeable** the confirmation delay becomes.
-- ✅ This makes **confirmed-only PQP models highly scalable and resilient**, especially in large validator networks.
-
-> TreeChain doesn’t rely on a single path — **parallelism makes confirmation delays nearly invisible at scale**.
-
----
 ### 🛡️ Is the Parent Queue Pool (PQP) Centralized?
 
 - ❌ No — although the PQP may look like a global scheduler, it is **completely decentralized**.
