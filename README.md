@@ -9,7 +9,7 @@
 
 - 🔄 Replaces linear blockchain structures with a **tree of blocks**.
 - ⚙️ Introduces a **Parent Queue Pool (PQP)** for dynamic parent selection.
-- 🧠 Enables **parallel block production**, higher throughput, and efficient fault tolerance.
+- 🧠 Enables **parallel block production**, higher throughput and more **Scalability**.
 - 🧱 Designed to become the foundation for the **world’s most scalable decentralized system**.
 
 ---
@@ -24,13 +24,8 @@
 
 - 🌴 ₿ **TreeChainTheory — PoW Model** is now available!  
   Explore how TreeChainTheory adapts Bitcoin’s Proof-of-Work consensus into a hierarchical block tree structure.  
-  Visit the repo to learn more: [TreeChainTheory---BitcoinModel](https://github.com/TreeChainTheory/TreeChainTheory---BitcoinModel)
+  Visit the repo to learn more: [🌳 TreeChainTheory---BitcoinModel](https://github.com/TreeChainTheory/TreeChainTheory---BitcoinModel)
 
-- 🔬 [`examples/`](./examples/) *(Coming Soon)*  
-  Step-by-step flowcharts, rollback traces, and block growth examples.
-
-- 🚀 [`future-directions.md`](./future-directions.md) *(Coming Soon)*  
-  Expanding TreeChain into production-grade Layer 1 protocols.
 
 ---
 
