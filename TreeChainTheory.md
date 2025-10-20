@@ -30,27 +30,6 @@ Traditional blockchains use a linear, reverse-linked list structure where each b
 This makes the system more scalable, and fair — paving the way for a high-throughput , highly scalable decentralized network.
 
 
-
-
-## 📐 Tree Structure Explained
-
-TreeChainTheory introduces a structural shift in how blocks are linked — moving from a single linear chain to a multi-branching tree.
-
-Unlike traditional blockchains where each block has exactly one child (forming a straight line), TreeChainTheory allows each block to have **multiple children**, opening up new possibilities for parallel processing and scalability.
-
-### 🌳 Ideal Case: 2 Children Per Parent
-
-To maintain simplicity and clarity, our theory assumes an **ideal case** where each parent block produces exactly **2 children**. This forms a balanced tree-like structure that is easy to model, visualize, and simulate.
-
-
-         Genesis
-          /   \
-       B1      B2
-      / \     /  \
-    B3   B4  B5   B6
-    ...
-
-
 ### 🔗 Block Relationships
 
 - **Each block** has one parent (except the Genesis block).  
@@ -82,6 +61,184 @@ This dual-reference design makes every block **cryptographically linked in two d
   - The **alignment rules** and **parent queue structure** ensure strict determinism.  
   - No arbitrary cross-links are allowed — each block’s secondary linkage is always within its alignment path.  
   - This makes TreeChainTheory **structured like a tree, secured like a chain, and extended like a DAG** — a unique hybrid design enabling both parallelism and order.
+
+---
+
+
+# 🌳 TreeChain & PQP 
+
+The **TreeChain** framework reimagines blockchain architecture by replacing the traditional *linear chain* with a **tree-structured block system** — designed to support **parallel consensus**, **deterministic validation**, and **scalable finality**.
+
+- TreeChainTheory introduces a structural shift in how blocks are linked — moving from a single linear chain to a multi-branching tree.
+
+- Unlike traditional blockchains where each block has exactly one child (forming a straight line), TreeChainTheory allows each block to have **multiple children**, opening up new possibilities for parallel processing and scalability.
+
+## 🌴 TreeChain Overview
+
+- **TreeChain** represents the entire blockchain as a **logical tree**, where each parent block can produce multiple aligned child blocks simultaneously.  
+- Unlike recursive trees, TreeChain uses **index-based mappings** (`IndexMap`) for both blocks and their child relationships, achieving **O(1)** access time for lookups, insertions, and traversals.  
+- This structure is **consensus-agnostic** — it seamlessly adapts to **PoW**, **PoS**, or **PoH** models by integrating relevant block creation and validation logic.  
+- Each block maintains dual continuity:
+  - **Vertical linkage** through `parent_hash` (tree structure)
+  - **Horizontal linkage** through `prev_pqp_commitment` (aligned continuity)
+- This ensures every new block is cryptographically bound to both its *parent* and *aligned sibling chain*, maintaining strong consistency across concurrent branches.
+
+### 🌿 Key Characteristics
+- **Parallel block growth** — multiple branches expand in real time.  
+- **Deterministic ordering** — alignment levels ensure predictable validator or miner roles.  
+- **Efficient traversal** — constant-time lookups via index mapping.  
+- **Placeholder handling** — missing or stale blocks are represented by placeholders to preserve structural integrity.  
+- **Consensus flexibility** — TreeChain remains compatible with hybrid or dynamic consensus models.
+
+## 🧩 Parent Queue Pool (PQP) 👓 Overview 
+
+The **Parent Queue Pool (PQP)** is the **ordering and scheduling layer** of TreeChain —  
+responsible for managing **which parent block** is currently active and **in what order** new parents are processed.
+
+
+Since TreeChain is **not linear** and multiple parent branches can exist simultaneously,  
+PQP enforces a **global parent order** so that **only one parent** is considered “active” for new child block creation at any given moment.
+
+
+Each new block generates a **ParentQueueEntry**, storing:
+- `queue_index` → Position in PQP sequence.  
+- `align` → Alignment level (1-aligned, 2-aligned, etc.).  
+- `block_hash` & `parent_hash` → Linkage identifiers.  
+- `pqp_commitment` & `prev_pqp_commitment` → Commitment continuity proofs.  
+- `leader_address` & `signature` → Validator or miner authentication.  
+- `timestamp` → Time or slot marker (for PoH).  (optional for remainig models)
+
+
+### 🌳 Ideal Case: 2 Children Per Parent
+
+- To maintain simplicity and clarity, our theory assumes an **ideal case** where each parent block produces exactly **2 children**. This forms a balanced tree-like structure that is easy to model, visualize, and simulate.
+
+
+         Genesis
+          /   \
+       B1      B2
+      / \     /  \
+    B3   B4  B5   B6
+    ...
+
+- **Tree** generalizes the idea of Treechain across **Proof-of-Stake (PoS)** and **Proof-of-History (PoH)** models — maintaining a consistent data structure while adapting the consensus logic.  
+- Instead of growing a single linear chain of confirmed blocks, it grows **multiple branches concurrently**, allowing **parallel leader validation** and **time-synchronized verification**.  
+- Structurally, it’s still **tree-based but index-driven**, not recursive — meaning it relies on an **index map** to track parent-child and aligned relationships efficiently.
+- The **index map** provides **O(1)** access by `queue_index` or `block_hash`, ensuring scalable & optimized lookups even as the network grows.
+- The **Parent Queue Pool (PQP)** ensures every block attaches to:
+  - A valid **parent block** (`parent_hash`)
+  - A valid **previous aligned block** (`prev_pqp_commitment`)
+  - A **stake/time-validated leader or Miner(POW model)**
+- When an expected block is missed (due to inactivity or disqualification), a **placeholder block** is inserted to preserve the deterministic structure — ensuring indexing consistency across all nodes.
+- This design allows **time-synchronized parallel validation** (PoH) or **stake-weighted participation** (PoS) — both with deterministic structural ordering.
+
+## 🌴 Tree Structure
+
+```rust
+pub struct TreeChain {
+    pub blocks: IndexMap<String, Block>,
+    pub children_map: IndexMap<String, Vec<String>>,
+    pub count: usize,
+}
+```
+
+- **TreeChain** represents the complete tree view of the blockchain under **PoS/PoH consensus**.  
+  It extends the traditional structure with **validator/time tracking mechanisms**.
+
+- **`blocks` → `IndexMap<String, Block>`**
+  - Stores every block (**confirmed**, **pending**, or **placeholder**) using its **hash** as the key.  
+  - Preserves insertion order, ensuring **deterministic traversal** based on `queue_index` or **timestamp (PoH)**.  
+  - Enables **O(1)** block lookup and **predictable ordering** across validators.
+
+- **`children_map` → `IndexMap<String, Vec<String>>`**
+  - Maps each **parent block’s hash → list of its children block hashes**.  
+  - Maintains the **tree structure** without recursion, supporting **parallel verification paths**.  
+  - Allows **rapid identification** of branches and **aligned leader outputs**.
+
+- **`validator_set` → `IndexMap<String, ValidatorInfo>` (only for Pos/Poh models)**
+  - Tracks **validators** currently participating in block creation.  
+  - Each validator entry includes:  
+    - 💠 **Stake or weight** (for PoS)  
+    - ⏱️ **Slot/timestamp alignment** (for PoH)  
+    - 📊 **Performance / participation metrics**
+
+- **`count` → `usize`**
+  - Counts only **confirmed and valid** blocks.  
+  - **Placeholder** or **orphaned** blocks are retained structurally but excluded from active count.
+
+## ⚙️ Workflow
+
+TreeChain coordinates **validator alignment**, **time progression**, and **parent scheduling** across all branches.
+
+---
+
+### 🧩 1. Aligned Block Creation
+
+Each parent may produce up to **N children**, one for each **aligned validator or slot**:
+
+- 1-aligned validator/block  
+- 2-aligned validator/block  
+- …  
+- N-aligned validator/block  
+
+Each aligned block must:
+
+- Reference the **parent’s hash** (for vertical linkage).  
+- Reference the **previous same aligned block’s `PQP` commitment** (for continuity).  
+- Including **PoS or PoH models**
+
+
+### 🧱 2. Block Linking & PQP Commitments
+
+Each block includes:
+
+- **`pqp_commitment`** → hash commitment covering internal fields (including block hash, stake/timestamp, and alignment info).  
+- **`prev_pqp_commitment`** → points to the previous block of the same alignment.
+
+These dual links establish:
+
+- **Vertical linkage** — via `parent_hash`  
+- **Horizontal/time linkage** — via `prev_pqp_commitment`
+
+Together, these ensure **structural consistency**, **temporal ordering**, and **tamper resistance** across aligned validator paths.
+
+### 🔁 3. Dynamic Parent Switching
+
+Once an aligned validator completes its block for the current parent:
+
+- It immediately starts preparing for the **next eligible parent** as per PQP rotation.  
+- Validators automatically switch to the next parent once **any aligned child of that next parent** is broadcast.
+
+This maintains continuous consensus flow, ensuring:
+
+- No idle waiting between parents.  
+- No duplicated mining or staking efforts.  
+- Fair competition among all alignment groups.
+
+---
+
+### 🧩 4. Confirm-Only PQP Mode
+
+To improve finality and avoid forks:
+
+- Blocks are **only added to the PQP after confirmation** (based on stake majority or PoH slot verification).  
+- Unconfirmed or invalid blocks are **rejected or rolled back**, but **placeholders** ensure the index map remains stable.
+
+This guarantees all nodes maintain an **identical PQP index view**, even in rollback or partial confirmation scenarios.
+
+
+### 🌐 Outcome: Unified Parallel Consensus Layer
+
+Under **POW/PoS/PoH**, TreeChain evolves into a next-generation consensus model that is:
+
+- ⚡ **Parallel** — Multiple validators or time slots produce blocks simultaneously, maximizing throughput.  
+- 🧭 **Deterministic** — Time or stake sequencing ensures predictable and fair leader rotation.  
+- 🔒 **Secure** — Dual-link commitments (parent + PQP) guarantee tamper resistance across all validator paths.  
+- 🧩 **Efficient** — Maintains **O(1)** lookups and updates, even across large validator networks.
+
+Together, these properties make **TreeChain** a **unified, parallel, and verifiable consensus layer**, seamlessly merging **time**, **stake**, and **structure** into one scalable blockchain framework.
+
+
 
 ### 🧬 Key Design Principles
 
