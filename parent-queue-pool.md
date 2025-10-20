@@ -1,4 +1,4 @@
-## 🧾 Parent Queue Pool (PQP)
+# 🧾 Parent Queue Pool (PQP)
 
 The **Parent Queue Pool** is a decentralized **queue** (deque) that maintains a list of upcoming parent blocks. It is a core component of the TreeChainTheory protocol, enabling scalable and parallel block generation.
 
@@ -8,6 +8,7 @@ The **Parent Queue Pool** is a decentralized **queue** (deque) that maintains a 
 - 🔄 Manages parent assignment for future child blocks.
 - 🚮 Removes a parent block once it gets its designated number of children (N).
 
+---
 ### 📦 What does each PQP entry contain?
 
 Each block added to the TreeChain includes a compact **`pqp_entry`** —  
@@ -111,7 +112,46 @@ In **TreeChain**, the PQP is updated in a decentralized and verifiable way by em
   - **Order-preserving linkage** between aligned blocks.  
   - **Efficient parent updates** as the tree grows.  
   - **Continuous hashing** across all alignment levels — maintaining both **tree structure** and **sequential security**.
- 
+---
+# 🌴 TreeChain & ⛓ PQP ( Visualization )
+- Let this **Visualizaton** follow **POW** model.
+
+### Genisis Child Propagation (CHILDREN = 3)
+<img width="450" height="300" alt="image" src="https://github.com/user-attachments/assets/d6b3b6e9-7018-4821-9f66-ccc8f4759316" />
+
+- Initially There will be genesis in both Tree and PQPool acting as Parent and Previous Pqp commitment at the same tiem.
+- When Some Node entered the **TREE** its immediately added to the **PQP**
+- As soon as **Node 0** receives 3 children it is removed from the **PQPool**.
+
+### 1st Node Parent
+<img width="500" height="300" alt="image" src="https://github.com/user-attachments/assets/b601c0b8-647e-4726-a3c3-8fd12ab42cb8" />
+
+- Each Node is supplies 2 feilds for next blocks , 1.**Parent Hash** , 2.**PQP commitment** .
+- The **PQP** handles the order of blocks to be **parents**
+
+### Next Prent getting Children earlier
+<img width="600" height="341" alt="image" src="https://github.com/user-attachments/assets/a0c34da4-33b2-41b2-a280-e46780fd52c0" />
+
+- Here **2** is **current parent** , but even before the 3rd aligned child is mined , 1st aligned child of **next parent** got mined. so the **next parent now becomes the current parent**.
+- The current parent is now **removed** from the **PQPool**
+- You can see the **queue_index** is preserved in the bfs left to right ordering even if a child is missed.
+
+> **queue_index**: In a K-ary tree (e.g., a 3-ary tree, here K = CHILDREN), if all possible node positions are numbered sequentially from the genesis node (0) to the last node, from left to right and level by level, then each block’s queue_index equals the index of its intended position — even if one or more earlier positions (blocks) are missing.
+
+### Prev PQP Commitment connection
+<img width="600" height="381" alt="image" src="https://github.com/user-attachments/assets/27734001-a64b-4278-a6c3-1f111f69e78e" />
+
+
+- The **PQP Commitment** connection ensures the chain continuity among different **aligned blocks** as shown in the diagram
+- Its clear that the Previous PQP commitment is connected to the same aligned previous block in the **TREE**
+
+---
+
+**Why PQP Commitment Connection is Needed**
+ - Ensures **hash continuity** among different aligned blocks in the TreeChain.  
+ - Without this connection, when a block is mined, its hash is **not continued** until it becomes a parent block.  
+ - This breaks the cryptographic linkage (unlike Bitcoin’s continuous block hash chain).  
+ - Lack of continuity makes it **easier for attackers** to manipulate or rewrite parts of the TreeChain.
 
 ---
 
