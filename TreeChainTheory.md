@@ -3,15 +3,14 @@
 > **What if a blockchain wasn’t a chain?**  
 > Instead of a linear reverse-linked list, imagine a tree — branching, parallel, and scalable.  
 
-**TreeChainTheory** explores a new data structure for blockchains, where blocks grow in a binary tree-like formation instead of a single sequential chain. This model introduces novel possibilities in speed, decentralization, and consensus design — aiming to overcome the limitations of traditional blockchain architecture.
+**TreeChainTheory** explores a new data structure for blockchains, where blocks grow in a tree-like formation instead of a single sequential chain. This model introduces novel possibilities in speed, decentralization, and consensus design — aiming to overcome the limitations of traditional blockchain architecture.
 
 ## 🔍 Core Ideas
 - 🌱 Replaces linear blockchains with a **tree** structure of blocks.
-- ⚡ Aims to increase **throughput** by parallelizing block creation.
+- ⚡ Aims to increase **scalability** & **throughput** by parallelizing block creation.
 - 👥 Enables better **decentralization** with multiple active block leaders.
 - 🔄 Introduces a **parent queue pool** for dynamic parent selection.
-- 🎯 Inspired by models like **Solana’s Proof of History**, but with a structural twist.
-- 🚀 Designed to become the base for the **world’s fastest cryptocurrency**.
+- 🚀 Designed to become the base for the **world's most scalable blockchain**.
 
 
 ## 🌲 Why Tree Over Chain?
@@ -24,11 +23,11 @@ Traditional blockchains use a linear, reverse-linked list structure where each b
 
 **TreeChainTheory** proposes a paradigm shift:
 
-- 🧬 Each parent can give rise to multiple children (we assume 2 per parent in our base model).
+- 🧬 Each parent can give rise to multiple children (2 or 3).
 - 🌐 Multiple leaders can produce blocks **in parallel**.
 - 🔁 Parent queue pool dynamically schedules parents for next block production.
 
-This makes the system more scalable, fault-tolerant, and fair — paving the way for a high-throughput, decentralized network.
+This makes the system more scalable, and fair — paving the way for a high-throughput , highly scalable decentralized network.
 
 
 
@@ -54,28 +53,54 @@ To maintain simplicity and clarity, our theory assumes an **ideal case** where e
 
 ### 🔗 Block Relationships
 
-- **Each block** has one parent (except the Genesis block).
-- **Each parent** can produce **two children**, handled by **two separate leaders**.
-- A parent is **removed from the queue** once both of its children are created.
-- The structure grows **horizontally and vertically**, forming a tree instead of a line.
+- **Each block** has one parent (except the Genesis block).  
+- **Each parent** can produce **Multiple children (N)**, handled by **(N) leaders** (1-aligned, 2-aligned..., N-aligned miners/validators/leaders).  
+- **Alignment** defines the position of a block in the tree —  
+  - A **1-aligned block** is created by a 1-aligned miner/validater/leader (first child).  
+  - A **2-aligned block** is created by a 2-aligned miner/validater/leader (second child).
+  - A **N-aligned block** is created by a N-aligned miner/validater/leader (N'th child). 
+- A parent is **removed from the parent queue pool** once both of its aligned children are created.  
+- The structure grows **horizontally and vertically**, forming a **tree** rather than a simple linear chain.
+
+
+### 🧩 Block Composition & PQP Commitments
+
+Each block contains more than just the usual `hash` and `parent_hash` — it also carries:
+- `pqp_commitment` → the **SHA-256 hash** of multiple internal fields, including the block’s own `hash`.
+- so yes the `pqp_commitment` is computed after the hash is computed.
+- `prev_pqp_commitment` → a reference to the **previous block of the same alignment** in the tree.
+
+This dual-reference design makes every block **cryptographically linked in two directions**:
+1. **Vertical linkage** — through `parent_hash`, pointing to its parent’s `hash`.  
+2. **Horizontal linkage** — through `prev_pqp_commitment`, connecting to the previous same aligned block.(this is not strictly horizontal linkage)
+
+
+### 🕸️ DAG-Like Yet Distinct
+
+- Because each block references both its **parent** and its **previous same aligned block**, it effectively has **two parent references** — resembling a **Directed Acyclic Graph (DAG)**.  
+- However, TreeChainTheory is **not a DAG in practice**:  
+  - The **alignment rules** and **parent queue structure** ensure strict determinism.  
+  - No arbitrary cross-links are allowed — each block’s secondary linkage is always within its alignment path.  
+  - This makes TreeChainTheory **structured like a tree, secured like a chain, and extended like a DAG** — a unique hybrid design enabling both parallelism and order.
 
 ### 🧬 Key Design Principles
 
 - **Decentralization**: Multiple leaders operate simultaneously to create children blocks.
-- **Parallelism**: Two children can be created in parallel, increasing throughput.
-- **Determinism**: The process for choosing the next parent and assigning leaders is deterministic via a queue system.
-- **Flexibility**: Though we assume 2 children per parent here, the model supports N-ary trees.
+- **Parallelism**: Multiple children can be created in parallel, increasing throughput.
+- **Determinism**: The process for choosing the next parent and assigning leaders is deterministic via a queue system (**Parent Queue Pool**).
+- **Flexibility**: Though we assume 2 or 3 children per parent here, the model supports N-ary trees.
 
 ### 📦 The Parent Queue Pool
 
 A central part of the system is the **Parent Queue Pool**, which tracks all eligible parent blocks. Here's how it works:
 
 - When a block is created, it is added to the parent queue.
-- Once it receives two children, it is removed from the queue.
-- The queue ensures fair rotation and avoids centralized leader bottlenecks.
+- Once it receives N children, it is removed from the queue.
+- The queue ensures fair rotation and avoids centralized bottlenecks.
 
 > This simple but powerful idea sets the stage for scalable and decentralized block creation — replacing linear limits with branching potential.
 
-➡️ *Further details are documented in `parent-queue-pool.md` and `consensus.md`.*
+📘 **Further details:** See [`parent-queue-pool.md`](./parent-queue-pool.md)  
+for the complete explanation of how the **Parent Queue Pool (PQP)** manages parent selection and rotation.
 
     
