@@ -1,7 +1,7 @@
 # 🌳 TreeChainTheory – Reimagining Blockchain Structure
 
 > What if a blockchain wasn’t a chain?  
-> What if it was a tree — scalable, parallel, and self-healing?
+> What if it was a tree — scalable, parallel, and more?
 
 ---
 
@@ -10,7 +10,7 @@
 - 🔄 Replaces linear blockchain structures with a **tree of blocks**.
 - ⚙️ Introduces a **Parent Queue Pool (PQP)** for dynamic parent selection.
 - 🧠 Enables **parallel block production**, higher throughput, and efficient fault tolerance.
-- 🧱 Designed to become the foundation for the **world’s fastest decentralized system**.
+- 🧱 Designed to become the foundation for the **world’s most scalable decentralized system**.
 
 ---
 
@@ -22,8 +22,9 @@
 - 🧪 [`parent-queue-pool.md`](./parent-queue-pool.md)  
   How the Parent Queue Pool works, entry format, embedded validation, rollback logic, and alternatives.
 
-- 📊 [`consensus/basic-model.md`](./consensus/basic-model.md) *(Coming Soon)*  
-  Explores different ways to assign leaders and finalize blocks.
+- 🌴 ₿ **TreeChainTheory — PoW Model** is now available!  
+  Explore how TreeChainTheory adapts Bitcoin’s Proof-of-Work consensus into a hierarchical block tree structure.  
+  Visit the repo to learn more: [TreeChainTheory---BitcoinModel](https://github.com/TreeChainTheory/TreeChainTheory---BitcoinModel)
 
 - 🔬 [`examples/`](./examples/) *(Coming Soon)*  
   Step-by-step flowcharts, rollback traces, and block growth examples.
@@ -35,8 +36,7 @@
 
 ### 🛠️ Features
 
-- ✅ **Tree structure** allows multiple children per parent (ideal: 2).
-- ✅ **Rollback mechanism** prunes only bad branches, not full chain.
+- ✅ **Tree structure** allows multiple children per parent (ideal: 2 or 3).
 - ✅ **Confirmed-only PQP mode** prevents rollback altogether.
 - ✅ **Parallel leader execution** boosts scalability.
 - ✅ **No central scheduler** — everything is embedded and verified within blocks.
