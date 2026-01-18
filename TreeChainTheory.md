@@ -297,11 +297,34 @@ The alignment mechanism divides transactions among aligned leaders (miners/valid
 - Guarantees deterministic assignment for all contract creation events, ensuring that parallel miners cannot create duplicate deployments.
 
 ### 📜 Smart Contract Interaction
-- Uses the **contract address** (not the sender’s key) for alignment: 
-  `alignment_index = (last_digit_of(contract_address) % N) + 1`
-- All interactions with the same contract are processed by the **same aligned validator group**.  
-- Multiple users interacting with the same contract will not split across branches — maintaining consistency in contract state transitions getting rid of **exploitation**.
-- Additionally, within each block, **no two transactions** can share the **same sender pubkey**, ensuring non-conflicting execution order.
+
+- Implements a **two-step interaction model**:
+  - **Register Tokens to SC** (sender allocates balance to the contract)
+  - **Interact with SC** using only the registered balance
+
+- **Registration Transaction Alignment:**
+  - Uses the **sender’s public key (`pubkey`)**
+  - `alignment_index = (last_digit_of(sender's_pubkey) % N) + 1`
+
+- **Contract Call Alignment:**
+  - Uses the **contract address** (not the sender’s key)
+  - `alignment_index = (last_digit_of(contract_address) % N) + 1`
+
+- **Why this model?**
+  - If aligned by sender pubkey alone, different users could hit the same contract from **different lanes**, causing **state divergence**
+  - Aligning by **contract address** forces all interactions of the same SC into a **single lane**, ensuring consistent state transitions
+
+- **Why register tokens first?**
+  - Without registration, a sender could **double spend** by:
+    - Sending a normal transfer on one lane
+    - Using the same tokens in a smart contract call on another lane
+  - Registration restricts spending to the **SC-allocated balance**, eliminating cross-lane double spends
+
+- **Outcome:**
+  - Prevents **smart contract state divergence**
+  - Ensures **deterministic SC execution ordering**
+  - Blocks **cross-lane double spend attempts** by design
+
 
 ### 🧠 Why Not Use `txid` for Alignment?
 
