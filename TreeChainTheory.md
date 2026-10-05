@@ -282,18 +282,22 @@ The alignment mechanism divides transactions among aligned leaders (miners/valid
 
 ## 🌐 TreeChainTheory Transaction Alignment Logic
 
-### 💸 Normal Token Transfer
-- Uses the **sender’s public key (`pubkey`)**.  
-- Performs:
-  `alignment_index = (last_digit_of(sender's_pubkey) % N) + 1`
+### 🔑 The Rule: Every Output Belongs to One Lane
+- Every output (coin) is locked by a **locking script** (`script_pubkey`), which says who may spend it. TreeChainTheory treats the locking script as the **owner** of the output.
+- Each output belongs to exactly one lane:
+  `alignment_index = (first 64 bits of SHA-256(locking script) % N) + 1`
 > `N` represents "N" in N-ary Tree.
-- The resulting `alignment_index` determines which aligned miner/validator handles the transaction.  
-- This ensures that **all transactions from the same sender** always go to the **same alignment group** — preventing replay attempts.
+- A transaction's alignment is the common alignment of the outputs it spends. A transaction is valid **only if all its inputs** have the same alignment, and only the aligned miner/validator of that lane may include it.
+- Because the locking script is part of the output, **every node knows an output's lane as soon as the output is created**.
+
+### 💸 Normal Token Transfer
+- Aligned by the locking script of the coins being spent, i.e. by the **sender's address**.
+- All coins sent to one address share one lane, so a sender's transactions always go to the **same alignment group**, which prevents conflicting spends in parallel blocks.
+- **Wallets** keep all their coins in one lane by only using addresses whose locking scripts map to their lane (on average `N` key generations per address). A wallet can then combine any of its coins, including change, in one transaction.
+- Multisig and timelocked (CLTV/CSV) outputs follow the **same rule**: all outputs locked to one multisig or timelock address share a lane.
 
 ### ⚙️ Smart Contract Creation
-- Follows the **same logic** as normal transfers.  
-- Uses the **creator’s public key (`pubkey`)** to determine alignment:
-  `alignment_index = (last_digit_of(sender's_pubkey) % N) + 1`
+- Follows the **same logic** as normal transfers: aligned by the creator's address (the locking script of the coins it spends).
 - Guarantees deterministic assignment for all contract creation events, ensuring that parallel miners cannot create duplicate deployments.
 
 ### 📜 Smart Contract Interaction
@@ -303,15 +307,14 @@ The alignment mechanism divides transactions among aligned leaders (miners/valid
   - **Interact with SC** using only the registered balance
 
 - **Registration Transaction Alignment:**
-  - Uses the **sender’s public key (`pubkey`)**
-  - `alignment_index = (last_digit_of(sender's_pubkey) % N) + 1`
+  - Aligned by the **sender's address** (like a normal transfer)
 
 - **Contract Call Alignment:**
-  - Uses the **contract address** (not the sender’s key)
-  - `alignment_index = (last_digit_of(contract_address) % N) + 1`
+  - Uses the **contract address** (not the sender's address)
+  - `alignment_index = (first 64 bits of SHA-256(contract_address) % N) + 1`
 
 - **Why this model?**
-  - If aligned by sender pubkey alone, different users could hit the same contract from **different lanes**, causing **state divergence**
+  - If aligned by sender alone, different users could hit the same contract from **different lanes**, causing **state divergence**
   - Aligning by **contract address** forces all interactions of the same SC into a **single lane**, ensuring consistent state transitions
 
 - **Why register tokens first?**
@@ -326,16 +329,18 @@ The alignment mechanism divides transactions among aligned leaders (miners/valid
   - Blocks **cross-lane double spend attempts** by design
 
 
-### 🧠 Why Not Use `txid` for Alignment?
+### 🧠 Why the Locking Script, and Not the `txid` or a Digit of the Public Key?
 
 If alignment were determined by the **transaction ID (`txid`)**,  
 a malicious sender could generate **multiple valid transactions** using different inputs, producing separate `txid`s that map to **different alignment groups**.  
 Each aligned miner might then include one of those transactions, all appearing valid in isolation — leading to **parallel double-spends**.
 
-By instead aligning using the **sender’s public key**, TreeChainTheory guarantees that:
-- All of a sender’s transactions are handled by **a single aligned miner or validator**.
-- Cross-branch double-spend attempts are structurally impossible.
-- Consensus remains **fair, deterministic, and cryptographically secure**.
+An earlier version used the **last hex digit of the sender's public key**. It worked, but it spread owners evenly only when `N` divides 16, the lane of a coin was unknown until it was spent, and multisig coins needed a special case.
+
+By aligning on the **hash of the locking script**, TreeChainTheory guarantees that:
+- Two transactions that spend the same output **always land in the same lane**, because the output's locking script is the same for both.
+- Owners are spread **evenly across lanes for any `N`** (measured on 200 real Bitcoin blocks in the Bitcoin Model repository).
+- Cross-branch double-spend attempts are structurally impossible, and consensus remains **fair, deterministic, and cryptographically secure**.
 
 > The alignment mechanism is what allows **TreeChainTheory** to maintain *parallelism without chaos* — enabling multiple aligned miners to operate simultaneously while guaranteeing that no transaction ever appears twice.
 

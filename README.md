@@ -35,6 +35,7 @@
 - ✅ **Confirmed-only PQP mode** prevents rollback altogether.
 - ✅ **Parallel leader execution** boosts scalability.
 - ✅ **No central scheduler** — everything is embedded and verified within blocks.
+- ✅ **Conflict-free parallel blocks** — every coin belongs to the lane given by the hash of its locking script, so two spends of the same coin always land in the same lane (see [`TreeChainTheory.md`](./TreeChainTheory.md#-treechaintheory-transaction-alignment-logic)).
 
 ---
 
